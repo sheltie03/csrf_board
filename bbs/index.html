@@ -1,0 +1,103 @@
+<?php
+$top_url = "http://" . $_SERVER["HTTP_HOST"] . "/";
+$err_msg = "";
+$message ="";
+$admin = 0;
+$name = (isset( $_GET["name"] ) === true) ?$_GET["name"]: "名無し";
+$comment  = (isset($_GET["comment"]) === true) ?  trim($_GET["comment"])  : "";
+
+if (isset($_COOKIE["CSRF-session"]) === false) {
+  header("Location: " . $top_url, true , 302);
+}
+
+if ($_COOKIE["CSRF-session"] == hash("sha256", "Admin")) {
+  $admin = true;
+}
+
+if (isset($_GET["logout"]) === true) {
+  if (isset($_COOKIE["CSRF-session"])) {
+    setcookie("CSRF-session", "", time()-1, "/");
+  }
+  header("Location: " . $top_url, true , 302);
+}
+
+
+if (isset($_GET["send"]) === true) {
+    if ($comment  === "")  $err_msg = "コメントを入力してください";
+
+    if($err_msg === ""){
+        $fp = fopen("data.txt" ,"a");
+        $reqtime = date( "Y/m/d H:i.s" );
+        $domain = parse_url($_SERVER["HTTP_REFERER"])["host"];
+        fwrite($fp , $name."\t".$domain."\t".$comment."\t".$reqtime."\n");
+        $message ="書き込みに成功しました";
+    }
+}
+
+$fp = fopen("data.txt","r");
+
+$dataArr= array();
+while($res = fgets($fp)){
+    $tmp = explode("\t",$res);
+    $arr = array(
+        "name"=>$tmp[0],
+        "referer"=>$tmp[1],
+        "comment"=>$tmp[2],
+        "time"=>$tmp[3]
+    );
+    $dataArr[]= $arr;
+}
+$dataArr = array_reverse($dataArr, true);
+
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="ja">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>CSRF掲示板</title>
+    </head>
+    <body>
+        <form method="get" action="">
+          <?php echo $name; ?>さん
+          <input type="submit" name="logout" value="ログアウト">
+          <br>
+          <br>
+          コメント：<textarea name="comment" rows="1" cols="40"></textarea>
+          <br>
+            <?php echo $err_msg; ?>
+          <br>
+            <?php echo $message; ?>
+          <br>
+          <input type="hidden" name="name" value="<?php echo $name; ?>">
+          <input type="submit" name="send" value="コメント送信">
+          <input type="submit" name="reload" value="再読み込み">
+          <input type="button" name="reset" value="掲示板のリセット" onClick="location.href='../admin/?name=<?php echo $name; ?>&admin=<?php echo $admin; ?>'">
+          <input type="hidden" name="admin" value="<?php echo $admin; ?>">
+        </form>
+        <dl>
+
+            <table>
+              <tr>
+                <td>ユーザ名</td>
+                <td>@</td>
+                <td>リファラ</td>
+                <td>:</td>
+                <td align='center'>タイムスタンプ</td>
+                <td>:</td>
+                <td>コメント</td>
+              </tr>
+              <?php foreach($dataArr as $data):?>
+              <tr>
+                <td><span><?php echo $data["name"]; ?></span></td>
+                <td>@</td>
+                <td><span><?php echo $data["referer"]; ?><span></td>
+                <td>:</td>
+                <td><span><?php echo $data["time"]; ?></span></td>
+                <td>:</td>
+                <td><span><?php echo $data["comment"]; ?></span></td>
+              </tr>
+            <?php endforeach;?>
+            </table>
+        </dl>
+    </body>
+</html>

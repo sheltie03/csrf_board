@@ -1,0 +1,34 @@
+<?php
+$bbs_url = "http://" . $_SERVER["HTTP_HOST"] . "/bbs/";
+$top_url = "http://" . $_SERVER["HTTP_HOST"] . "/";
+if ($_GET["username"] == "Owner") {
+  if ($_GET["password"] == "renwO") {
+    $session = hash("sha256", "Owner");
+    setcookie("CSRF-session", $session, time()+3600, "/");
+    header("Location: " . $bbs_url . "?name=Owner", true , 302);
+  } else {
+    if (isset($_COOKIE["CSRF-session"])) {
+      setcookie("CSRF-session", "", time()-1, "/");
+    }
+    header("Location: " . $top_url, true , 302);
+  }
+} else if ($_GET["username"] == "Admin") {
+  if ($_GET["password"] == "nimdA") {
+    $session = hash("sha256", "Admin");
+    setcookie("CSRF-session", $session, time()+3600, "/");
+    header("Location: " . $bbs_url . "?name=Admin", true , 302);
+  } else {
+    if (isset($_COOKIE["CSRF-session"])) {
+      setcookie("CSRF-session", "", time()-1, "/");
+    }
+    header("Location: " . $top_url, true , 302);
+  }
+} else {
+  if (isset($_COOKIE["CSRF-session"])) {
+    setcookie("CSRF-session", "", time()-1, "/");
+  }
+  $session = hash("sha256", "User");
+  setcookie("CSRF-session", $session, time()+3600, "/");
+  header("Location: " . $bbs_url . "?name=User", true , 302);
+}
+?>
